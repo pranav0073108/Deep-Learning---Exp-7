@@ -7,47 +7,134 @@
 To develop a convolutional autoencoder for image denoising application.
 
 **THEORY**
+An Autoencoder is an unsupervised neural network that learns to compress input data into a lower-dimensional representation and then reconstruct it back to its original form. It consists of an encoder that reduces the input dimensions and a decoder that rebuilds the input from this compressed data. The model is trained to minimize the reconstruction error between the original and reconstructed data. Autoencoders are widely used for dimensionality reduction, denoising, and anomaly detection tasks.
 
 **Neural Network Model**
 
-Include the neural network model diagram.
+<img width="1185" height="241" alt="image" src="https://github.com/user-attachments/assets/669687bc-d145-4ac9-94b1-cae3add5e3bb" />
+
 
 **DESIGN STEPS**
 
-**STEP 1:**
+STEP 1: Import the necessary libraries and dataset.
 
-Write your own steps
+STEP 2: Load the dataset and scale the values for easier computation.
 
-**STEP 2:**
+STEP 3:** Add noise to the images randomly for both the train and test sets.
 
-**STEP 3**:**
+STEP 4: Build the Neural Model using Convolutional Layer Pooling Layer Up Sampling Layer. Make sure the input shape and output shape of the model are identical.
 
-**STEP 4:**
+STEP 5: Pass test data for validating manually.
 
-**STEP 5:**
-
-**STEP 6:**
-
+STEP 6: Pass test data for validating manually.
 **PROGRAM**
 
-**Name:**
+**Name:Pranav K**
 
-**Register Number:**
+**Register Number:2305001026**
 
-#write your code here
+```
+# === DENOISING AUTOENCODER for MNIST ===
+from tensorflow.keras import layers, models, Input, datasets
+import numpy as np, matplotlib.pyplot as plt, pandas as pd
+
+# === Load and Normalize Data ===
+(x_train, _), (x_test, _) = datasets.mnist.load_data()
+x_train, x_test = x_train.astype('float32') / 255., x_test.astype('float32') / 255.
+x_train, x_test = x_train.reshape(-1, 28, 28, 1), x_test.reshape(-1, 28, 28, 1)
+
+# === Add Gaussian Noise ===
+noise_factor = 0.5
+x_train_noisy = np.clip(x_train + noise_factor * np.random.normal(0, 1, x_train.shape), 0, 1)
+x_test_noisy  = np.clip(x_test  + noise_factor * np.random.normal(0, 1, x_test.shape),  0, 1)
+
+# === Show Noisy Samples ===
+plt.figure(figsize=(20, 2))
+for i in range(10):
+    ax = plt.subplot(1, 10, i+1)
+    plt.imshow(x_test_noisy[i].reshape(28, 28), cmap='gray')
+    ax.axis('off')
+plt.suptitle("Noisy MNIST Samples", fontsize=14)
+plt.show()
+
+# === Model Architecture (Balanced Autoencoder) ===
+inp = Input(shape=(28, 28, 1))
+
+# Encoder
+x = layers.Conv2D(16, (3,3), activation='relu', padding='same')(inp)
+x = layers.MaxPooling2D((2,2), padding='same')(x)
+x = layers.Conv2D(8, (3,3), activation='relu', padding='same')(x)
+x = layers.MaxPooling2D((2,2), padding='same')(x)
+x = layers.Conv2D(8, (3,3), activation='relu', padding='same')(x)
+encoded = layers.MaxPooling2D((2,2), padding='same', name='Encoded_Layer')(x)
+
+# Decoder
+x = layers.Conv2DTranspose(8, (4,4), strides=(1,1), activation='relu', padding='valid')(encoded)
+x = layers.Conv2DTranspose(8, (3,3), strides=(2,2), activation='relu', padding='same')(x)
+x = layers.Conv2DTranspose(16, (3,3), strides=(2,2), activation='relu', padding='same')(x)
+decoded = layers.Conv2D(1, (3,3), activation='sigmoid', padding='same')(x)
+
+# === Compile & Train ===
+autoencoder = models.Model(inp, decoded, name='MNIST_Denoising_Autoencoder')
+autoencoder.compile(optimizer='adam', loss='binary_crossentropy')
+autoencoder.summary()
+
+history = autoencoder.fit(
+    x_train_noisy, x_train,
+    epochs=5,
+    batch_size=256,
+    shuffle=True,
+    validation_data=(x_test_noisy, x_test)
+)
+
+# === Plot Training Curves ===
+metrics = pd.DataFrame(history.history)
+metrics[['loss','val_loss']].plot(title='Training vs Validation Loss', figsize=(8,4))
+plt.show()
+
+# === Denoise Test Images ===
+decoded_imgs = autoencoder.predict(x_test_noisy)
+# === Display Original / Noisy / Denoised Images ===
+n = 10
+plt.figure(figsize=(20, 6))
+for i in range(n):
+    # Original
+    ax = plt.subplot(3, n, i + 1)
+    plt.imshow(x_test[i].reshape(28, 28), cmap='gray')
+    ax.axis('off')
+    if i == 0: ax.set_title("Original")
+
+    # Noisy
+    ax = plt.subplot(3, n, i + 1 + n)
+    plt.imshow(x_test_noisy[i].reshape(28, 28), cmap='gray')
+    ax.axis('off')
+    if i == 0: ax.set_title("Noisy")
+
+    # Denoised
+    ax = plt.subplot(3, n, i + 1 + 2*n)
+    plt.imshow(decoded_imgs[i].reshape(28, 28), cmap='gray')
+    ax.axis('off')
+    if i == 0: ax.set_title("Denoised")
+
+plt.suptitle("MNIST Denoising Autoencoder Results", fontsize=16)
+plt.show()
+```
 
 **OUTPUT**
 
 **Model Summary**
 
-Include your model summary
+<img width="967" height="759" alt="image" src="https://github.com/user-attachments/assets/18b58cad-2f80-41b4-8608-fb99af77a636" />
 
 **Training loss**
+<img width="953" height="524" alt="image" src="https://github.com/user-attachments/assets/567b5794-c391-497a-b799-e0f3161977e3" />
+
 
 **Original vs Noisy Vs Reconstructed Image**
+<img width="987" height="345" alt="image" src="https://github.com/user-attachments/assets/48ac0315-59e8-406d-a13a-b463f4576170" />
 
-Include a few sample images here.
+
 
 **RESULT**
 
-Include your result here
+Thus the program to develop a convolutional autoencoder for image denoising application has been successfully implemented.
